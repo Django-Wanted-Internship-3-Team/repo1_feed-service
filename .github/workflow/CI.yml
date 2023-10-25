@@ -1,0 +1,45 @@
+name: CD
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  django-test:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.11.5]
+
+    steps:
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python -
+
+    - name: Install Dependencies
+      run: |
+        poetry install
+
+    - name: Run isort
+      run: poetry run isort . --check
+
+    - name: Run black
+      run: poetry run black . --check
+
+    - name: Run flake8
+      run: poetry run flake8
+
+    - name: Run migrations
+      run: |
+        poetry run python3 manage.py migrate
+
+    - name: Run tests
+      run: |
+        poetry run python3 manage.py test
