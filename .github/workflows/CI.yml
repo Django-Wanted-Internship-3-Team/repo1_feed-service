@@ -23,9 +23,6 @@ jobs:
     - name: Install Poetry
       run: curl -sSL https://install.python-poetry.org | python -
 
-    - name: ls -al
-      run: ls -al
-
     - name: Install Dependencies
       run: poetry install
 
