@@ -7,6 +7,3 @@ class PostLikeIncrementSerializer(ModelSerializer):
     class Meta:
         model = Post
         fields = "__all__"
-
-    def save(self, **kwargs):
-        return super().save(**kwargs)
