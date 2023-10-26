@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 from users.models import User
@@ -10,6 +12,7 @@ class Post(models.Model):
         INSTAGRAM = "instagram"
         THREADS = "threads"
 
+    content_id = models.UUIDField(default=uuid.uuid4, editable=False)
     post_type = models.CharField(max_length=16, choices=PostType.choices)
     title = models.CharField(max_length=32)
     content = models.TextField()

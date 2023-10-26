@@ -1,20 +1,23 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDay, TruncHour
 from django.db.models.query import QuerySet
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.dacorator import mandatories, optionals
+from common.decorator import mandatories, optionals
 from common.exceptions import InvalidParameterException, UnknownServerErrorException
 from common.utils import get_before_week, get_now
 from posts.models import Post
-from posts.serializers import StatisticsListSerializer, StatisticsQuerySerializer
+from posts.paginations import PaginationHandlerMixin
+from posts.serializers import PostListSerializer, StatisticsListSerializer, StatisticsQuerySerializer
 
 
 class StatisticsListView(APIView):
@@ -104,3 +107,104 @@ class StatisticsListView(APIView):
         else:
             raise InvalidParameterException("value는 count, view_count, share_count, like_count 중 선택 가능합니다.")
         return statistics
+
+
+class PostListView(PaginationHandlerMixin, APIView):
+    # @TODO: IsAuthenticated로 변경 @simseulnyang
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend]
+    pagination_class = LimitOffsetPagination
+
+    @swagger_auto_schema(
+        operation_summary="게시물 리스트를 조회",
+        query_serializer=PostListSerializer,
+        responses={
+            status.HTTP_200_OK: PostListSerializer,
+        },
+    )
+    @mandatories("type")
+    @optionals({"search": "search_by"}, {"ordering": "orderby"}, {"hashtag": None})
+    def get(self, request: Request, m: dict, o: dict) -> Response:
+        """
+        query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회합니다.
+
+        Args:
+            type: 게시물 타입으로 facebook, twitter, instagram, threads 중에 1개를 선택하여 조회 가능합니다. (default : 모든 게시물 타입)
+            search: title, content, title + content 검색이 가능합니다.
+            ordering: created_at, updated_at, view_count, share_count, like_count 기준으로 목록을 정렬합니다. (default: created_at)
+            hashtag: 조회할 해시태그입니다. (default: 본인계정)
+
+        Returns:
+            content_id : 게시물 id
+            hashtag : 해시태그
+            user : 게시글 작성 유저
+            post_type : 게시물 타입
+            title : 게시글 제목
+            content : 게시글 내용
+            view_count : 조회수
+            like_count : 좋아요 수
+            share_count : 공유 수
+            created_at : 작성일자
+            updated_at : 업데이트 일자
+        """
+        try:
+            # 쿼리 매개변수 받기
+            post_type = m["type"]
+            search_query = o.get("search", "")
+            ordering = o.get("ordering", "created_at")
+            hashtag = request.user.username if o["hashtag"] is None else o["hashtag"]
+
+            # 유저 계정의 해시태그로 초기 필터링한 게시물 목록 가져오기
+            postlist = Post.objects.filter(user__username=hashtag)
+
+            # 검색어로 필터링
+            if search_query:
+                postlist = postlist.filter(Q(title__icontains=search_query) | Q(content__icontains=search_query))
+
+            # 정렬 기준 적용
+            postlist = self.apply_ordering(postlist, ordering)
+
+            # post_type에 따라 필터링 된 게시물 목록 가져오기
+            post_type_list = self.get_post_type_list(postlist, post_type)
+
+            # 게시물 목록 serialize
+            serializer = PostListSerializer(post_type_list, many=True)
+        except Exception as e:
+            raise UnknownServerErrorException(e)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def apply_ordering(self, postlist, ordering):
+        """
+        정렬 기준을 적용하여 postlist 정렬합니다.
+        ordering에 "asc" 또는 "desc"를 추가하여 오름차순 또는 내림차순 정렬 가능합니다.
+
+        Args:
+            postlist: 정렬할 postlist
+            ordering: 정렬 기준과 방향 (예: created_at:desc)
+
+        Returns:
+            정렬된 postlist
+        """
+        ordering_parts = ordering.split(":")
+        field_name = ordering_parts[0]
+        direction = ordering_parts[1] if len(ordering_parts) > 1 else "desc"
+
+        if direction == "asc":
+            field_name = F(field_name).asc()
+        else:
+            field_name = F(field_name).desc()
+
+        return postlist.order_by(field_name)
+
+    def get_post_type_list(self, postlist: Post, post_type: str):
+        if post_type == "facebook":
+            post_type_list = postlist.filter(post_type="facebook")
+        elif post_type == "twitter":
+            post_type_list = postlist.filter(post_type="twitter")
+        elif post_type == "instagram":
+            post_type_list = postlist.filter(post_type="instagram")
+        elif post_type == "threads":
+            post_type_list = postlist.filter(post_type="threads")
+        else:
+            raise InvalidParameterException("post_type 값을 잘못 선택하셨습니다.")
+        return post_type_list
