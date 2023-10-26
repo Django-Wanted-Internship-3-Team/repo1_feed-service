@@ -3,9 +3,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from likes.serializers import PostLikeIncrementSerializer
 from posts.models import Post
-
-from .serializers import PostLikeIncrementSerializer
 
 
 class LikesAPIView(APIView):
