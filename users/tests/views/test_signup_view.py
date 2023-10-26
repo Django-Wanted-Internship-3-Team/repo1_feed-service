@@ -16,9 +16,6 @@ class SignupViewTest(APITestCase):
             password="testpassword",
         )
 
-    def setUp(self):
-        pass
-
     def test_post_signup_success(self):
         response = self.client.post(
             path=reverse("signup"),

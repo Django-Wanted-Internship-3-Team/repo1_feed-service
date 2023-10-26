@@ -1,5 +1,3 @@
-from django.contrib.auth import password_validation
-from django.core.exceptions import ValidationError
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.request import Request
@@ -7,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.decorator import mandatories
-from common.exceptions import InvalidPasswordException
 from users.serializers import UserSerializer
 
 
@@ -32,13 +29,8 @@ class SignupView(APIView):
             username: 생성된 계정 이름
         """
         serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        password = m["password"]
-        try:
-            password_validation.validate_password(password)
-        except ValidationError as e:
-            raise InvalidPasswordException(e)
-
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
