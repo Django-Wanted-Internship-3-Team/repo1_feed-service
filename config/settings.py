@@ -24,6 +24,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "users",
+    "common",
     "posts",
     "likes",
     "shares",
@@ -74,8 +75,12 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("POSTGRESQL_DATABASE", default="repo_1"),
+        "USER": env("POSTGRESQL_USER", default="postgres"),
+        "PASSWORD": env("POSTGRESQL_PASSWORD", default="password"),
+        "HOST": env("POSTGRESQL_HOST", default="localhost"),
+        "PORT": env("POSTGRESQL_PORT", default="5432"),
     }
 }
 
@@ -105,9 +110,6 @@ TIME_ZONE = "Asia/Seoul"
 USE_I18N = True
 
 USE_L10N = True
-
-USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
