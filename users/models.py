@@ -5,6 +5,7 @@ from users.managers import UserManager
 
 
 class User(AbstractBaseUser):
+    username = models.CharField(max_length=128, unique=True)
     email = models.EmailField(max_length=128, unique=True)
     password = models.CharField(max_length=128)
     is_confirmed = models.BooleanField(default=False)
