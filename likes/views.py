@@ -11,9 +11,9 @@ from .serializers import PostLikeIncrementSerializer
 class LikesAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get_post(self, pk):
+    def get_post(self, content_id):
         try:
-            return Post.objects.get(pk=pk)
+            return Post.objects.get(content_id=content_id)
         except Post.DoesNotExist:
             raise NotFound("Post Not Found.")
 

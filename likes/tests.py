@@ -18,7 +18,7 @@ class LikeAPITestCase(APITestCase):
 
         self.client.logout()
 
-        url = f"{self.url}{self.post.pk}/"
+        url = f"{self.url}{self.post.content_id}/"
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, 401)
@@ -29,7 +29,7 @@ class LikeAPITestCase(APITestCase):
         # self.client.force_login(self.user)
         self.client.force_authenticate(user=self.user)
 
-        url = f"{self.url}{self.post.pk}/"
+        url = f"{self.url}{self.post.content_id}/"
 
         response = self.client.post(url)
 

@@ -6,4 +6,4 @@ from posts.models import Post
 class PostLikeIncrementSerializer(ModelSerializer):
     class Meta:
         model = Post
-        fields = "__all__"
+        fields = ("like_count",)
