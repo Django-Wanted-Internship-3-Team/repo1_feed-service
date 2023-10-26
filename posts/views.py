@@ -70,21 +70,20 @@ class StatisticsListView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_aggregation_info(self, date_type: str) -> tuple:
-        try:
-            if date_type == "date":
-                max_days = 30
-                aggregation_field = "created_at"
-                aggregation_type = TruncDay
-            elif date_type == "hour":
-                max_days = 7
-                aggregation_field = "created_at"
-                aggregation_type = TruncHour
-            return max_days, aggregation_field, aggregation_type
-        except:
+        if date_type == "date":
+            max_days = 30
+            aggregation_field = "created_at"
+            aggregation_type = TruncDay
+        elif date_type == "hour":
+            max_days = 7
+            aggregation_field = "created_at"
+            aggregation_type = TruncHour
+        else:
             raise InvalidParameterException("type은 date, hour 중 선택 가능합니다.")
+        return max_days, aggregation_field, aggregation_type
 
     def get_dates(self, date_type: str, max_days: int, start_date: str, end_date: str) -> None:
-        if type(start_date) == str or type(end_date) == str:
+        if isinstance(start_date, str) and isinstance(end_date, str):
             start_date = datetime.strptime(start_date, "%Y-%m-%d")
             end_date = datetime.strptime(end_date, "%Y-%m-%d") + timedelta(days=1) - timedelta(seconds=1)
 
@@ -98,11 +97,10 @@ class StatisticsListView(APIView):
         return Post.objects.prefetch_related("hashtag").filter(q)
 
     def get_statistics(self, queryset: Post, aggregation_field: str, value: str, aggregation_type) -> QuerySet[dict]:
-        try:
-            if value == "count":
-                statistics = queryset.annotate(datetime=aggregation_type(aggregation_field)).values("datetime").annotate(count=Count("id"))
-            elif value in ["view_count", "like_count", "share_count"]:
-                statistics = queryset.annotate(datetime=aggregation_type(aggregation_field)).values("datetime").annotate(count=Sum(value))
-            return statistics
-        except:
+        if value == "count":
+            statistics = queryset.annotate(datetime=aggregation_type(aggregation_field)).values("datetime").annotate(count=Count("id"))
+        elif value in ["view_count", "like_count", "share_count"]:
+            statistics = queryset.annotate(datetime=aggregation_type(aggregation_field)).values("datetime").annotate(count=Sum(value))
+        else:
             raise InvalidParameterException("value는 count, view_count, share_count, like_count 중 선택 가능합니다.")
+        return statistics
