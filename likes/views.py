@@ -1,4 +1,4 @@
-from rest_framework.exceptions import NotFound
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,18 +11,12 @@ from .serializers import PostLikeIncrementSerializer
 class LikesAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get_post(self, content_id):
-        try:
-            return Post.objects.get(content_id=content_id)
-        except Post.DoesNotExist:
-            raise NotFound("Post Not Found.")
-
     def post(self, request, content_id):
-        post = self.get_post(content_id)
-        like_count = post.like_count
+        post = get_object_or_404(Post, content_id=content_id)
+
         serializer = PostLikeIncrementSerializer(
             post,
-            data={"like_count": like_count + 1},
+            data={"like_count": post.like_count + 1},
             partial=True,
         )
 
