@@ -23,6 +23,7 @@ urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
     # API
+    path("api/users/", include("users.urls")),
     path("api/posts/", include("posts.urls")),
     path("api/common/", include("common.urls")),
     # Swagger

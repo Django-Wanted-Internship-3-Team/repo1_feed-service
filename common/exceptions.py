@@ -18,3 +18,9 @@ class UnknownServerErrorException(APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     default_detail = "Unknown server error"
     default_code = "unknown_server_error"
+
+
+class InvalidPasswordException(APIException):
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = "Invalid password"
+    default_code = "Invalid password"
