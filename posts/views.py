@@ -10,7 +10,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.dacorator import mandatories, optionals
+from common.decorator import mandatories, optionals
 from common.exceptions import InvalidParameterException, UnknownServerErrorException
 from common.utils import get_before_week, get_now
 from posts.models import Post
