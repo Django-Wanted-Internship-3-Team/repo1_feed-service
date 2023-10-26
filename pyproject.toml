@@ -15,6 +15,7 @@ drf-yasg = "^1.21.7"
 djangorestframework-simplejwt = "^5.3.0"
 djangorestframework-camel-case = "^1.4.2"
 psycopg2-binary = "^2.9.9"
+django-filter = "^23.3"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.5.1"

@@ -20,6 +20,7 @@ ALLOWED_HOSTS = ["*"]
 THIRD_PARTY_APPS = [
     "rest_framework",
     "drf_yasg",
+    "django_filters",
 ]
 
 LOCAL_APPS = [
