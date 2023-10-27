@@ -128,7 +128,7 @@ class PostListView(PaginationHandlerMixin, APIView):
     @optionals({"hashtag": None}, {"type": ["facebook", "twitter", "instagram", "threads"]})
     def get(self, request: Request, o: dict) -> Response:
         """
-        query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회합니다.
+        query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회
 
         Args:
             type: 게시물 타입으로 facebook, twitter, instagram, threads 중에 1개를 선택하여 조회 가능합니다. (default : 모든 게시물 타입)
