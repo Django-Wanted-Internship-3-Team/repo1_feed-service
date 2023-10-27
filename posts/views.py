@@ -125,7 +125,7 @@ class PostListView(PaginationHandlerMixin, APIView):
             status.HTTP_200_OK: PostListSerializer,
         },
     )
-    @optionals({"hashtag": None}, {"type": "facebook"})
+    @optionals({"hashtag": None}, {"type": ["facebook", "twitter", "instagram", "threads"]})
     def get(self, request: Request, o: dict) -> Response:
         """
         query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회합니다.
@@ -158,13 +158,10 @@ class PostListView(PaginationHandlerMixin, APIView):
             # 변수를 지정하여 필터링한 posts 목록 가져오기
             q = Q()
             q = q & Q(user__username=hashtag)
-            q = q | Q(title__icontains=search_keyword) | Q(content__icontains=search_keyword)
 
-            if "title" in request.query_params and request.query_params["title"]:
-                q = q & Q(title__icontains=request.query_params["title"])
-
-            if "content" in request.query_params and request.query_params["content"]:
-                q = q & Q(content__icontains=request.query_params["content"])
+            # search_keyword를 통해 title, content field 검색
+            if search_keyword:
+                q = q | Q(title__icontains=search_keyword) | Q(content__icontains=search_keyword)
 
             posts = Post.objects.filter(q)
 
@@ -180,9 +177,9 @@ class PostListView(PaginationHandlerMixin, APIView):
             raise UnknownServerErrorException(e)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def get_post_type_list(self, posts: Post, post_type: str):
+    def get_post_type_list(self, posts: Post, post_type: str) -> QuerySet[Post]:
         if post_type in ["facebook", "twitter", "instagram", "threads"]:
-            posts.filter(post_type=post_type)
+            posts.filter(post_type__in=[post_type])
         else:
             raise InvalidParameterException("post_type 값을 잘못 선택하셨습니다.")
         return posts
