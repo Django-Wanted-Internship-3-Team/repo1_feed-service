@@ -15,6 +15,7 @@ from rest_framework.views import APIView
 from common.decorator import mandatories, optionals
 from common.exceptions import InvalidParameterException, UnknownServerErrorException
 from common.utils import get_before_week, get_now
+from posts.filters import PostFilter
 from posts.models import Post
 from posts.paginations import PaginationHandlerMixin
 from posts.serializers import PostListSerializer, StatisticsListSerializer, StatisticsQuerySerializer
@@ -113,6 +114,8 @@ class PostListView(PaginationHandlerMixin, APIView):
     # @TODO: IsAuthenticated로 변경 @simseulnyang
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
+    filter_fields = ["ordering"]
+    filterset_class = PostFilter
     pagination_class = LimitOffsetPagination
 
     @swagger_auto_schema(
@@ -123,15 +126,13 @@ class PostListView(PaginationHandlerMixin, APIView):
         },
     )
     @mandatories("type")
-    @optionals({"search": "search_by"}, {"ordering": "orderby"}, {"hashtag": None})
+    @optionals({"hashtag": None})
     def get(self, request: Request, m: dict, o: dict) -> Response:
         """
         query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회합니다.
 
         Args:
             type: 게시물 타입으로 facebook, twitter, instagram, threads 중에 1개를 선택하여 조회 가능합니다. (default : 모든 게시물 타입)
-            search: title, content, title + content 검색이 가능합니다.
-            ordering: created_at, updated_at, view_count, share_count, like_count 기준으로 목록을 정렬합니다. (default: created_at)
             hashtag: 조회할 해시태그입니다. (default: 본인계정)
 
         Returns:
@@ -150,19 +151,19 @@ class PostListView(PaginationHandlerMixin, APIView):
         try:
             # 쿼리 매개변수 받기
             post_type = m["type"]
-            search_query = o.get("search", "")
-            ordering = o.get("ordering", "created_at")
+            search_keyword = request.query_params.get("search", "")
             hashtag = request.user.username if o["hashtag"] is None else o["hashtag"]
 
             # 유저 계정의 해시태그로 초기 필터링한 게시물 목록 가져오기
             postlist = Post.objects.filter(user__username=hashtag)
 
             # 검색어로 필터링
-            if search_query:
-                postlist = postlist.filter(Q(title__icontains=search_query) | Q(content__icontains=search_query))
+            if search_keyword:
+                postlist = postlist.filter(Q(title__icontains=search_keyword).distinct() | Q(content__icontains=search_keyword).distinct())
 
-            # 정렬 기준 적용
-            postlist = self.apply_ordering(postlist, ordering)
+            # 사용자 정의 정렬 필터 적용
+            filter = PostFilter(request.GET, queryset=postlist)
+            postlist = filter.qs
 
             # post_type에 따라 필터링 된 게시물 목록 가져오기
             post_type_list = self.get_post_type_list(postlist, post_type)
