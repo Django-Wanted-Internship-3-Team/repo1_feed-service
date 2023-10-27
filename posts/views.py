@@ -170,7 +170,7 @@ class PostListView(PaginationHandlerMixin, APIView):
             posts = Post.objects.filter(q)
 
             # 사용자 정의 정렬 필터 적용
-            ordering = PostFilter(request.GET, queryset=posts)
+            PostFilter(request.GET, queryset=posts)
 
             # post_type에 따라 필터링 된 게시물 목록 가져오기
             post_type_list = self.get_post_type_list(posts, post_type)
