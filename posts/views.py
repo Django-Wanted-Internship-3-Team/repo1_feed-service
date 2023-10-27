@@ -18,7 +18,11 @@ from common.utils import get_before_week, get_now
 from posts.filters import PostFilter
 from posts.models import Post
 from posts.paginations import PaginationHandlerMixin
-from posts.serializers import PostListSerializer, StatisticsListSerializer, StatisticsQuerySerializer
+from posts.serializers import (
+    PostListSerializer,
+    StatisticsListSerializer,
+    StatisticsQuerySerializer,
+)
 
 
 class StatisticsListView(APIView):
