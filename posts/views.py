@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Count, F, Q, Sum
+from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDay, TruncHour
 from django.db.models.query import QuerySet
 from django_filters.rest_framework import DjangoFilterBackend
@@ -125,14 +125,15 @@ class PostListView(PaginationHandlerMixin, APIView):
             status.HTTP_200_OK: PostListSerializer,
         },
     )
-    @mandatories("type")
-    @optionals({"hashtag": None})
-    def get(self, request: Request, m: dict, o: dict) -> Response:
+    @optionals({"hashtag": None}, {"type": "facebook"})
+    def get(self, request: Request, o: dict) -> Response:
         """
         query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회합니다.
 
         Args:
             type: 게시물 타입으로 facebook, twitter, instagram, threads 중에 1개를 선택하여 조회 가능합니다. (default : 모든 게시물 타입)
+            search : title, content, title + content 내에 존재하는 키워드를 검색하여 일치하는 데이터들을 조회합니다.
+            ordering : created_at, updated_at, view_count, like_count, share_count를 기준으로 오름차순/내림차순으로 정렬하여 조회합니다. (default: created_at)
             hashtag: 조회할 해시태그입니다. (default: 본인계정)
 
         Returns:
@@ -150,23 +151,28 @@ class PostListView(PaginationHandlerMixin, APIView):
         """
         try:
             # 쿼리 매개변수 받기
-            post_type = m["type"]
+            post_type = o["type"]
             search_keyword = request.query_params.get("search", "")
             hashtag = request.user.username if o["hashtag"] is None else o["hashtag"]
 
-            # 유저 계정의 해시태그로 초기 필터링한 게시물 목록 가져오기
-            postlist = Post.objects.filter(user__username=hashtag)
+            # 변수를 지정하여 필터링한 posts 목록 가져오기
+            q = Q()
+            q = q & Q(user__username=hashtag)
+            q = q | Q(title__icontains=search_keyword) | Q(content__icontains=search_keyword)
 
-            # 검색어로 필터링
-            if search_keyword:
-                postlist = postlist.filter(Q(title__icontains=search_keyword).distinct() | Q(content__icontains=search_keyword).distinct())
+            if "title" in request.query_params and request.query_params["title"]:
+                q = q & Q(title__icontains=request.query_params["title"])
+
+            if "content" in request.query_params and request.query_params["content"]:
+                q = q & Q(content__icontains=request.query_params["content"])
+
+            posts = Post.objects.filter(q)
 
             # 사용자 정의 정렬 필터 적용
-            filter = PostFilter(request.GET, queryset=postlist)
-            postlist = filter.qs
+            ordering = PostFilter(request.GET, queryset=posts)
 
             # post_type에 따라 필터링 된 게시물 목록 가져오기
-            post_type_list = self.get_post_type_list(postlist, post_type)
+            post_type_list = self.get_post_type_list(posts, post_type)
 
             # 게시물 목록 serialize
             serializer = PostListSerializer(post_type_list, many=True)
@@ -174,38 +180,9 @@ class PostListView(PaginationHandlerMixin, APIView):
             raise UnknownServerErrorException(e)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def apply_ordering(self, postlist, ordering):
-        """
-        정렬 기준을 적용하여 postlist 정렬합니다.
-        ordering에 "asc" 또는 "desc"를 추가하여 오름차순 또는 내림차순 정렬 가능합니다.
-
-        Args:
-            postlist: 정렬할 postlist
-            ordering: 정렬 기준과 방향 (예: created_at:desc)
-
-        Returns:
-            정렬된 postlist
-        """
-        ordering_parts = ordering.split(":")
-        field_name = ordering_parts[0]
-        direction = ordering_parts[1] if len(ordering_parts) > 1 else "desc"
-
-        if direction == "asc":
-            field_name = F(field_name).asc()
-        else:
-            field_name = F(field_name).desc()
-
-        return postlist.order_by(field_name)
-
-    def get_post_type_list(self, postlist: Post, post_type: str):
-        if post_type == "facebook":
-            post_type_list = postlist.filter(post_type="facebook")
-        elif post_type == "twitter":
-            post_type_list = postlist.filter(post_type="twitter")
-        elif post_type == "instagram":
-            post_type_list = postlist.filter(post_type="instagram")
-        elif post_type == "threads":
-            post_type_list = postlist.filter(post_type="threads")
+    def get_post_type_list(self, posts: Post, post_type: str):
+        if post_type in ["facebook", "twitter", "instagram", "threads"]:
+            posts.filter(post_type=post_type)
         else:
             raise InvalidParameterException("post_type 값을 잘못 선택하셨습니다.")
-        return post_type_list
+        return posts
