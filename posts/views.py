@@ -158,6 +158,7 @@ class PostListView(PaginationHandlerMixin, APIView):
             post_type = o["type"]
             search_keyword = request.query_params.get("search", "")
             hashtag = request.user.username if o["hashtag"] is None else o["hashtag"]
+            ordering = request.query_params.get("ordering", "created_at")  # 기본 정렬은 created_at
 
             # 변수를 지정하여 필터링한 posts 목록 가져오기
             q = Q()
@@ -170,7 +171,12 @@ class PostListView(PaginationHandlerMixin, APIView):
             posts = Post.objects.filter(q)
 
             # 사용자 정의 정렬 필터 적용
-            ordering = PostFilter(request.GET, queryset=posts)
+            if ordering in ["created_at", "updated_at", "view_count", "like_count", "share_count"]:
+                posts = posts.order_by(ordering)  # 오름차순 정렬
+
+                # 내림차순 정렬 옵션
+                if "desc" in request.query_params.get("ordering", ""):
+                    posts = posts.reverse()
 
             # post_type에 따라 필터링 된 게시물 목록 가져오기
             post_type_list = self.get_post_type_list(posts, post_type)
