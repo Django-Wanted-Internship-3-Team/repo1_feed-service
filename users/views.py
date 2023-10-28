@@ -4,7 +4,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.decorator import mandatories
 from users.serializers import UserSerializer
 
 
@@ -16,8 +15,7 @@ class SignupView(APIView):
             status.HTTP_201_CREATED: UserSerializer,
         },
     )
-    @mandatories("email", "username", "password")
-    def post(self, request: Request, m: dict) -> Response:
+    def post(self, request: Request) -> Response:
         """
         username, email, paswword를 받아 유저 계정을 생성합니다.
         Args:

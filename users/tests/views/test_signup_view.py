@@ -30,18 +30,6 @@ class SignupViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_post_signup_fail_missing_parameters(self):
-        response = self.client.post(
-            path=reverse("signup"),
-            data=json.dumps(
-                {
-                    "email": "testuser1@example.com",
-                }
-            ),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_post_signup_fail_invalid_password(self):
         response = self.client.post(
             path=reverse("signup"),
