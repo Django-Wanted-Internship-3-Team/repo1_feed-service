@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.dacorator import mandatories, optionals
+from common.decorator import mandatories, optionals
 
 
 class QueryTestView(APIView):

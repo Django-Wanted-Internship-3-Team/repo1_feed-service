@@ -26,7 +26,7 @@ class StatisticsListViewTest(APITestCase):
                 share_count=i,
                 user=cls.users,
             )
-            cls.posts.hashtag.set([cls.hasgtag])
+            cls.posts.hashtag_set.set([cls.hasgtag])
 
     def setUp(self):
         pass
@@ -34,7 +34,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_date_success(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "type": "date",
                 "hashtag": "hashtag",
@@ -46,7 +46,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_hour_success(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "type": "hour",
                 "hashtag": "hashtag",
@@ -58,7 +58,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_not_found(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "type": "date",
                 "hashtag": "hashtag1",
@@ -72,7 +72,7 @@ class StatisticsListViewTest(APITestCase):
     # @TODO: 로그인 로직 구현 후 주석 풀기 @SaJH
     # def test_get_statistics_list_fail_unauthenticated(self):
     #     response = self.client.get(
-    #         path=reverse("statistics"),
+    #         path=reverse("statistics_list"),
     #         data={
     #             "type": "date",
     #             "hashtag": "hashtag",
@@ -83,7 +83,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_fail_missing_parameter(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "hashtag": "hashtag",
             },
@@ -93,7 +93,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_fail_invalid_parameter_type(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "type": "test",
                 "hashtag": "hashtag",
@@ -105,7 +105,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_fail_invalid_parameter_max_days(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "type": "date",
                 "start": "2023-10-1",
@@ -119,7 +119,7 @@ class StatisticsListViewTest(APITestCase):
 
     def test_get_statistics_list_fail_invalid_parameter_value(self):
         response = self.client.get(
-            path=reverse("statistics"),
+            path=reverse("statistics_list"),
             data={
                 "type": "date",
                 "hashtag": "hashtag",

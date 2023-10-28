@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from posts.models import HashTag
+
 
 class StatisticsQuerySerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["date", "hour"])
@@ -12,3 +14,12 @@ class StatisticsQuerySerializer(serializers.Serializer):
 class StatisticsListSerializer(serializers.Serializer):
     datetime = serializers.DateTimeField()
     count = serializers.IntegerField()
+
+
+class HashTagRecommendListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HashTag
+        fields = (
+            "id",
+            "name",
+        )
