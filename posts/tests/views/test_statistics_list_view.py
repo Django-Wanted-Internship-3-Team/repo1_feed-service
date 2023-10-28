@@ -15,6 +15,7 @@ class StatisticsListViewTest(APITestCase):
         for i in range(1, 11):
             cls.users = User.objects.create_user(
                 email=f"user{i}@example.com",
+                username=f"username{i}",
                 password="testpassword",
                 username=f"testuser{i}",
             )
