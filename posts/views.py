@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDay, TruncHour
 from django.db.models.query import QuerySet
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
@@ -20,6 +19,7 @@ from posts.models import Post
 from posts.paginations import PaginationHandlerMixin
 from posts.serializers import (
     PostListSerializer,
+    PostQuerySerializer,
     StatisticsListSerializer,
     StatisticsQuerySerializer,
 )
@@ -117,19 +117,16 @@ class StatisticsListView(APIView):
 class PostListView(PaginationHandlerMixin, APIView):
     # @TODO: IsAuthenticated로 변경 @simseulnyang
     permission_classes = [AllowAny]
-    filter_backends = [DjangoFilterBackend]
-    filter_fields = ["ordering"]
-    filterset_class = PostFilter
     pagination_class = LimitOffsetPagination
 
     @swagger_auto_schema(
         operation_summary="게시물 리스트를 조회",
-        query_serializer=PostListSerializer,
+        query_serializer=PostQuerySerializer,
         responses={
             status.HTTP_200_OK: PostListSerializer,
         },
     )
-    @optionals({"hashtag": None}, {"type": ["facebook", "twitter", "instagram", "threads"]})
+    @optionals({"hashtag": None}, {"type": {}})
     def get(self, request: Request, o: dict) -> Response:
         """
         query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회
@@ -154,6 +151,10 @@ class PostListView(PaginationHandlerMixin, APIView):
             updated_at : 업데이트 일자
         """
         try:
+            # filter 객체 생성 및 적용하기
+            filter = PostFilter(request.query_params, queryset=Post.objects.all())
+            filtered_posts = filter.qs
+
             # 쿼리 매개변수 받기
             post_type = o["type"]
             search_keyword = request.query_params.get("search", "")
@@ -162,21 +163,21 @@ class PostListView(PaginationHandlerMixin, APIView):
 
             # 변수를 지정하여 필터링한 posts 목록 가져오기
             q = Q()
-            q = q & Q(user__username=hashtag)
+
+            # hashtag가 유저 계정과 동일 여부 판별 및 조건에 따른 필터링
+            if hashtag == request.user.username:
+                q = q & Q(user__username=hashtag)
+            else:
+                q = q & Q(hashtag__exact=hashtag)
 
             # search_keyword를 통해 title, content field 검색
             if search_keyword:
                 q = q | Q(title__icontains=search_keyword) | Q(content__icontains=search_keyword)
 
-            posts = Post.objects.filter(q)
+            posts = filtered_posts.filter(q)
 
-            # 사용자 정의 정렬 필터 적용
-            if ordering in ["created_at", "updated_at", "view_count", "like_count", "share_count"]:
-                posts = posts.order_by(ordering)  # 오름차순 정렬
-
-                # 내림차순 정렬 옵션
-                if "desc" in request.query_params.get("ordering", ""):
-                    posts = posts.reverse()
+            # ordering에 따라 정렬 적용하여 나열된 목록 가져오기
+            posts = self.get_ordering(posts, ordering)
 
             # post_type에 따라 필터링 된 게시물 목록 가져오기
             post_type_list = self.get_post_type_list(posts, post_type)
@@ -187,9 +188,32 @@ class PostListView(PaginationHandlerMixin, APIView):
             raise UnknownServerErrorException(e)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def get_post_type_list(self, posts: Post, post_type: str) -> QuerySet[Post]:
-        if post_type in ["facebook", "twitter", "instagram", "threads"]:
-            posts.filter(post_type__in=[post_type])
+    def get_post_type_list(self, posts: QuerySet[Post], post_type: str) -> QuerySet[Post]:
+        if post_type == "all":
+            post_type = None
+            return posts
+
+        if post_type not in ["facebook", "twitter", "instagram", "threads"]:
+            raise InvalidParameterException(f"post_type 값 {post_type}를 잘못 선택하셨습니다.")
+
+        return posts.filter(post_type=post_type)
+
+    def get_ordering(self, posts: QuerySet[Post], ordering: str) -> QuerySet[Post]:
+        # 사용 가능한 필드 목록
+        allowed_fields = [
+            "created_at",
+            "-created_at",
+            "updated_at",
+            "-updated_at",
+            "view_count",
+            "-view_count",
+            "like_count",
+            "-like_count",
+            "share_count",
+            "-share_count",
+        ]
+
+        if ordering in allowed_fields:
+            return posts.order_by(ordering)
         else:
-            raise InvalidParameterException("post_type 값을 잘못 선택하셨습니다.")
-        return posts
+            return posts.order_by("created_at")
