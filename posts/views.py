@@ -126,7 +126,7 @@ class PostListView(PaginationHandlerMixin, APIView):
             status.HTTP_200_OK: PostListSerializer,
         },
     )
-    @optionals({"hashtag": None}, {"type": {}})
+    @optionals({"hashtag": None}, {"type": ["all", "facebook", "twitter", "instagram", "threads"]})
     def get(self, request: Request, o: dict) -> Response:
         """
         query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회
@@ -180,23 +180,16 @@ class PostListView(PaginationHandlerMixin, APIView):
             posts = self.get_ordering(posts, ordering)
 
             # post_type에 따라 필터링 된 게시물 목록 가져오기
-            post_type_list = self.get_post_type_list(posts, post_type)
+            if post_type != "all":
+                if post_type not in ["facebook", "twitter", "instagram", "threads"]:
+                    raise InvalidParameterException(f"post_type 값 {post_type}를 잘못 선택하셨습니다.")
+                posts = posts.filter(post_type=post_type)
 
             # 게시물 목록 serialize
-            serializer = PostListSerializer(post_type_list, many=True)
+            serializer = PostListSerializer(posts, many=True)
         except Exception as e:
             raise UnknownServerErrorException(e)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def get_post_type_list(self, posts: QuerySet[Post], post_type: str) -> QuerySet[Post]:
-        if post_type == "all":
-            post_type = None
-            return posts
-
-        if post_type not in ["facebook", "twitter", "instagram", "threads"]:
-            raise InvalidParameterException(f"post_type 값 {post_type}를 잘못 선택하셨습니다.")
-
-        return posts.filter(post_type=post_type)
 
     def get_ordering(self, posts: QuerySet[Post], ordering: str) -> QuerySet[Post]:
         # 사용 가능한 필드 목록
@@ -216,4 +209,4 @@ class PostListView(PaginationHandlerMixin, APIView):
         if ordering in allowed_fields:
             return posts.order_by(ordering)
         else:
-            return posts.order_by("created_at")
+            raise InvalidParameterException(f"ordering 값 {ordering}를 잘못 선택하셨습니다.")
