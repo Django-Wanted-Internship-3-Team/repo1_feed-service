@@ -17,6 +17,7 @@ class StatisticsListViewTest(APITestCase):
                 email=f"user{i}@example.com",
                 username=f"username{i}",
                 password="testpassword",
+
                 username=f"testuser{i}",
             )
             cls.posts = Post.objects.create(
