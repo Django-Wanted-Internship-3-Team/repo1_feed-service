@@ -10,11 +10,15 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from common.dacorator import mandatories, optionals
+from common.decorator import mandatories, optionals
 from common.exceptions import InvalidParameterException, UnknownServerErrorException
 from common.utils import get_before_week, get_now
-from posts.models import Post
-from posts.serializers import StatisticsListSerializer, StatisticsQuerySerializer
+from posts.models import HashTag, Post, PostHashtag
+from posts.serializers import (
+    HashTagRecommendListSerializer,
+    StatisticsListSerializer,
+    StatisticsQuerySerializer,
+)
 
 
 class StatisticsListView(APIView):
@@ -93,8 +97,8 @@ class StatisticsListView(APIView):
         return start_date, end_date
 
     def get_filtered_queryset(self, start_date: str, end_date: str, hashtag: str) -> Post:
-        q = Q(created_at__range=(start_date, end_date)) & Q(hashtag__name=hashtag)
-        return Post.objects.prefetch_related("hashtag").filter(q)
+        q = Q(created_at__range=(start_date, end_date)) & Q(hashtag_set__name=hashtag)
+        return Post.objects.prefetch_related("hashtag_set").filter(q)
 
     def get_statistics(self, queryset: Post, aggregation_field: str, value: str, aggregation_type) -> QuerySet[dict]:
         if value == "count":
@@ -104,3 +108,36 @@ class StatisticsListView(APIView):
         else:
             raise InvalidParameterException("value는 count, view_count, share_count, like_count 중 선택 가능합니다.")
         return statistics
+
+
+class HashTagRecommendListView(APIView):
+    # @TODO: IsAuthenticated로 변경 @SaJH
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        operation_summary="최근 3시간 동안 가장 많이 사용된 Tag 조회",
+        responses={
+            status.HTTP_200_OK: HashTagRecommendListSerializer,
+        },
+    )
+    def get(self, request: Request) -> Response:
+        """
+        최근 3시간 동안 가장 많이 사용된 Tag를 조회하는 API 입니다.
+
+        Returns:
+            hashtag_id: 해시태그 id
+            hashtag_name: 해시태그 이름
+        """
+        try:
+            today = datetime.now()
+            three_hours_ago = today - timedelta(hours=3)
+            queryset = self.get_filtered_queryset(today, three_hours_ago)
+            serializer = HashTagRecommendListSerializer(queryset, many=True)
+        except Exception as e:
+            raise UnknownServerErrorException(e)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get_filtered_queryset(self, today: str, three_hours_ago: str) -> PostHashtag:
+        q = Q(posthashtag__created_at__range=(three_hours_ago, today))
+        queryset = HashTag.objects.prefetch_related("posthashtag_set").filter(q).annotate(count=Count("posthashtag")).order_by("-count")
+        return queryset

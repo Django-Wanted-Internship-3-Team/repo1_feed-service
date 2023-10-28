@@ -10,19 +10,23 @@ repos:
     hooks:
     - id: black
       args: ['-l', '140', '-t', 'py311']
+
   - repo: https://github.com/myint/autoflake
     rev: v1.4
     hooks:
       - id: autoflake
         args:
-          - --in-place
-          - --remove-unused-variables
           - --remove-all-unused-imports
+          - --remove-unused-variables
+          - --ignore-init-module-imports
+          - --in-place
+          - --recursive
+
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
-        args: ['--line-length', '140']
+        args: ['--profile', 'black', '--filter-files', 'true']
 
 default_language_version:
   python: python3.11
