@@ -5,6 +5,7 @@ from django.db.models.functions import TruncDay, TruncHour
 from django.db.models.query import QuerySet
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -13,8 +14,15 @@ from rest_framework.views import APIView
 from common.decorator import mandatories, optionals
 from common.exceptions import InvalidParameterException, UnknownServerErrorException
 from common.utils import get_before_week, get_now
+from posts.filters import PostFilter
 from posts.models import Post
-from posts.serializers import StatisticsListSerializer, StatisticsQuerySerializer
+from posts.paginations import PaginationHandlerMixin
+from posts.serializers import (
+    PostListSerializer,
+    PostQuerySerializer,
+    StatisticsListSerializer,
+    StatisticsQuerySerializer,
+)
 
 
 class StatisticsListView(APIView):
@@ -104,3 +112,101 @@ class StatisticsListView(APIView):
         else:
             raise InvalidParameterException("value는 count, view_count, share_count, like_count 중 선택 가능합니다.")
         return statistics
+
+
+class PostListView(PaginationHandlerMixin, APIView):
+    # @TODO: IsAuthenticated로 변경 @simseulnyang
+    permission_classes = [AllowAny]
+    pagination_class = LimitOffsetPagination
+
+    @swagger_auto_schema(
+        operation_summary="게시물 리스트를 조회",
+        query_serializer=PostQuerySerializer,
+        responses={
+            status.HTTP_200_OK: PostListSerializer,
+        },
+    )
+    @optionals({"hashtag": None}, {"type": ["all", "facebook", "twitter", "instagram", "threads"]})
+    def get(self, request: Request, o: dict) -> Response:
+        """
+        query parameter로 type, search, ordering, hashtag를 받아 게시물 목록을 조회
+
+        Args:
+            type: 게시물 타입으로 facebook, twitter, instagram, threads 중에 1개를 선택하여 조회 가능합니다. (default : 모든 게시물 타입)
+            search : title, content, title + content 내에 존재하는 키워드를 검색하여 일치하는 데이터들을 조회합니다.
+            ordering : created_at, updated_at, view_count, like_count, share_count를 기준으로 오름차순/내림차순으로 정렬하여 조회합니다. (default: created_at)
+            hashtag: 조회할 해시태그입니다. (default: 본인계정)
+
+        Returns:
+            content_id : 게시물 id
+            hashtag : 해시태그
+            user : 게시글 작성 유저
+            post_type : 게시물 타입
+            title : 게시글 제목
+            content : 게시글 내용
+            view_count : 조회수
+            like_count : 좋아요 수
+            share_count : 공유 수
+            created_at : 작성일자
+            updated_at : 업데이트 일자
+        """
+        try:
+            # filter 객체 생성 및 적용하기
+            filter = PostFilter(request.query_params, queryset=Post.objects.all())
+            filtered_posts = filter.qs
+
+            # 쿼리 매개변수 받기
+            post_type = o["type"]
+            search_keyword = request.query_params.get("search", "")
+            hashtag = request.user.username if o["hashtag"] is None else o["hashtag"]
+            ordering = request.query_params.get("ordering", "created_at")  # 기본 정렬은 created_at
+
+            # 변수를 지정하여 필터링한 posts 목록 가져오기
+            q = Q()
+
+            # hashtag가 유저 계정과 동일 여부 판별 및 조건에 따른 필터링
+            if hashtag == request.user.username:
+                q = q & Q(user__username=hashtag)
+            else:
+                q = q & Q(hashtag__exact=hashtag)
+
+            # search_keyword를 통해 title, content field 검색
+            if search_keyword:
+                q = q | Q(title__icontains=search_keyword) | Q(content__icontains=search_keyword)
+
+            posts = filtered_posts.filter(q)
+
+            # ordering에 따라 정렬 적용하여 나열된 목록 가져오기
+            posts = self.get_ordering(posts, ordering)
+
+            # post_type에 따라 필터링 된 게시물 목록 가져오기
+            if post_type != "all":
+                if post_type not in ["facebook", "twitter", "instagram", "threads"]:
+                    raise InvalidParameterException(f"post_type 값 {post_type}를 잘못 선택하셨습니다.")
+                posts = posts.filter(post_type=post_type)
+
+            # 게시물 목록 serialize
+            serializer = PostListSerializer(posts, many=True)
+        except Exception as e:
+            raise UnknownServerErrorException(e)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get_ordering(self, posts: QuerySet[Post], ordering: str) -> QuerySet[Post]:
+        # 사용 가능한 필드 목록
+        allowed_fields = [
+            "created_at",
+            "-created_at",
+            "updated_at",
+            "-updated_at",
+            "view_count",
+            "-view_count",
+            "like_count",
+            "-like_count",
+            "share_count",
+            "-share_count",
+        ]
+
+        if ordering in allowed_fields:
+            return posts.order_by(ordering)
+        else:
+            raise InvalidParameterException(f"ordering 값 {ordering}를 잘못 선택하셨습니다.")
