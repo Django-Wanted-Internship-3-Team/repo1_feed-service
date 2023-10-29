@@ -6,7 +6,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from users.serializers import UserConfirmCodeSerializer, UserConfirmSerializer, UserSerializer
+from users.serializers import (
+    UserConfirmCodeSerializer,
+    UserConfirmSerializer,
+    UserSerializer,
+)
 
 
 class SignupView(APIView):
