@@ -14,7 +14,10 @@ class SharesAPITestCase(APITestCase):
     viewname = "shares"
 
     def test_post_failure_no_api(self):
-        path = reverse(self.viewname, kwargs={"content_id": None})
+        """
+        해당 view가 없으면 NoReverseMatch 예외가 수반됩니다.
+        """
+        reverse(self.viewname, kwargs={"content_id": None})
 
     def test_post_without_auth(self):
         """
@@ -46,7 +49,6 @@ class SharesAPITestCase(APITestCase):
             path=reverse(self.viewname, kwargs={"content_id": post.content_id}),
             data=None,
         )
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)  # status 200
 
         post_after_response = Post.objects.get(content_id=post.content_id)
