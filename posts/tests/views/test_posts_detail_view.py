@@ -1,6 +1,7 @@
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
@@ -57,3 +58,27 @@ class PostListViewTest(APITestCase):
             data={"type": "all", "hashtag": self.hashtag.id, "ordering": "created_at", "search": ""},
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_increment_view_count(self):
+        content_id = self.content_ids[0]
+
+        # 현재 조회수 가져오기
+        # 초기값 - 1 (조회와 동시에 count가 됨)
+        post = Post.objects.get(content_id=content_id)
+        initial_view_count = post.view_count - 1
+
+        # 게시물 조회
+        with transaction.atomic():
+            response = self.client.get(
+                path=reverse("post-detail", kwargs={"content_id": content_id}),
+                data={"type": "all", "hashtag": self.hashtag.id, "ordering": "created_at", "search": ""},
+            )
+
+        # 조회수 업데이트 확인
+        post.refresh_from_db()
+        updated_view_count = post.view_count
+
+        print("initial_view_count", initial_view_count)
+
+        self.assertEqual(updated_view_count, initial_view_count + 1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

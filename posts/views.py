@@ -226,11 +226,6 @@ class PostDetailView(APIView):
     )
     def get(self, request: Request, content_id: str) -> Response:
         post = get_object_or_404(Post, content_id=content_id)
-
-        # 게시글 조회수 증가
-        post.view_count += 1
-        post.save()
-
         serializer = PostDetailSerializer(post)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
