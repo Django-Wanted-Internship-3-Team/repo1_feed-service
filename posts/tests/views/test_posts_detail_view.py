@@ -12,7 +12,7 @@ from posts.models import HashTag, Post
 User = get_user_model()
 
 
-class PostListViewTest(APITestCase):
+class PostDetailViewTest(APITestCase):
     @classmethod
     def setUpTestData(cls):
         # 테스트 사용자 생성
