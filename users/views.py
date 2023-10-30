@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from users.serializers import (
     UserConfirmCodeSerializer,
     UserConfirmSerializer,
+    UserLoginSerializer,
     UserSerializer,
 )
 
@@ -56,7 +57,6 @@ class ConfirmUserView(APIView):
         Args:
             username: 이름
             password: 비밀번호
-            code: 인증 코드
         Returns:
             username: 이름
             is_confirmed: 인증 여부
@@ -71,3 +71,28 @@ class ConfirmUserView(APIView):
         response_data["is_confirmed"] = user.is_confirmed
 
         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class LoginView(APIView):
+    @swagger_auto_schema(
+        operation_summary="유저 로그인",
+        request_body=UserLoginSerializer,
+        responses={
+            status.HTTP_200_OK: UserLoginSerializer,
+        },
+    )
+    def post(self, request: Request) -> Response:
+        """
+        username, paswword를 받아 유저 계정을 활성화하고 JWT 토큰을 발급합니다.
+        Args:
+            username: 이름
+            password: 비밀번호
+        Returns:
+            username: 이름
+            token: access token과 refresh token
+        """
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
