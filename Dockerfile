@@ -17,5 +17,6 @@ RUN mkdir /app/src/
 WORKDIR /app
 
 COPY pyproject.toml /app/
+COPY setup.cfg /app/
 
 RUN poetry install
