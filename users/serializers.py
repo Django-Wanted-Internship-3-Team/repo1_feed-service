@@ -24,9 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserConfirmCodeSerializer(UserSerializer):
     def create(self, validated_data):
-        user_serializer = UserSerializer(data=validated_data)
-        user_serializer.is_valid(raise_exception=True)
-        user = user_serializer.save()
+        user = super().create(validated_data)
 
         confirm_code = "".join(random.choice(string.ascii_letters + string.digits) for i in range(6))
         user_confirm_code = UserConfirmCode.objects.create(code=confirm_code, user=user)
