@@ -33,9 +33,9 @@ class SignupView(APIView):
             username: 생성된 계정 이름
             code: 생성된 인증 코드
         """
-        user_confirm_code_serializer = UserConfirmCodeSerializer(data=request.data)
-        user_confirm_code_serializer.is_valid(raise_exception=True)
-        user_confirm_code = user_confirm_code_serializer.save()
+        serializer = UserConfirmCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_confirm_code = serializer.save()
 
         response_data = UserSerializer(user_confirm_code.user).data
         response_data["confirm_code"] = user_confirm_code.code
@@ -62,9 +62,9 @@ class ConfirmUserView(APIView):
             is_confirmed: 인증 여부
         """
         user = get_object_or_404(get_user_model(), username=request.data["username"])
-        user_confirm_serializer = UserConfirmSerializer(user, data=request.data)
-        user_confirm_serializer.is_valid(raise_exception=True)
-        user_confirm_serializer.save()
+        serializer = UserConfirmSerializer(user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         response_data = {}
         response_data["username"] = user.username

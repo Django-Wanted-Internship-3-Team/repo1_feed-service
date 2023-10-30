@@ -1,9 +1,7 @@
-import random
-import string
-
 from django.contrib.auth import get_user_model, password_validation
 from rest_framework import serializers
 
+from common.utils import get_random_string
 from users.models import UserConfirmCode
 
 
@@ -26,7 +24,7 @@ class UserConfirmCodeSerializer(UserSerializer):
     def create(self, validated_data):
         user = super().create(validated_data)
 
-        confirm_code = "".join(random.choice(string.ascii_letters + string.digits) for i in range(6))
+        confirm_code = get_random_string()
         user_confirm_code = UserConfirmCode.objects.create(code=confirm_code, user=user)
         return user_confirm_code
 
