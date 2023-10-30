@@ -6,4 +6,4 @@ class PostsConfig(AppConfig):
     name = "posts"
 
     def ready(self):
-        pass
+        import posts.signals  # noqa
