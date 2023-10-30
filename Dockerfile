@@ -13,10 +13,9 @@ RUN python3 -m venv $POETRY_VENV \
 ENV PATH="${PATH}:${POETRY_VENV}/bin"
 
 RUN mkdir /app/
-WORKDIR /app/
+RUN mkdir /app/src/
+WORKDIR /app
 
-COPY pyproject.toml ./
+COPY pyproject.toml /app/
 
 RUN poetry install
-
-COPY . /app

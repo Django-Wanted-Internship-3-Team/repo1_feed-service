@@ -21,9 +21,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: poetry run python manage.py runserver 0.0.0.0:8000
+    command: >
+      bash -c  "poetry run python src/manage.py makemigrations &&
+       poetry run python src/manage.py migrate &&
+       poetry run python src/manage.py runserver 0.0.0.0:8000"
     volumes:
-      - .:/app
+      - ./src:/app/src/
     environment:
       - POSTGRESQL_HOST=postgres
     ports:
