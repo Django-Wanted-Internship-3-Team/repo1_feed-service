@@ -94,7 +94,3 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "hashtag",
             "user",
         ]
-
-
-class PostDetailQuerySerializer(serializers.Serializer):
-    content_id = serializers.UUIDField()

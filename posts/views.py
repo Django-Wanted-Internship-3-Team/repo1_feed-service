@@ -19,7 +19,6 @@ from posts.filters import PostFilter
 from posts.models import Post
 from posts.paginations import PaginationHandlerMixin
 from posts.serializers import (
-    PostDetailQuerySerializer,
     PostDetailSerializer,
     PostListSerializer,
     PostQuerySerializer,
@@ -221,7 +220,6 @@ class PostDetailView(APIView):
 
     @swagger_auto_schema(
         operation_summary="content_id에 해당하는 게시글 상세 조회",
-        query_serializer=PostDetailQuerySerializer,
         responses={
             status.HTTP_200_OK: PostDetailSerializer,
         },

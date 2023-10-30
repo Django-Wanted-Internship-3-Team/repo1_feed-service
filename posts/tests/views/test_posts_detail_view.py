@@ -48,7 +48,6 @@ class PostListViewTest(APITestCase):
             path=reverse("post-detail", kwargs={"content_id": self.content_ids[0]}),
             data={"type": "all", "hashtag": self.hashtag.id, "ordering": "created_at", "search": ""},
         )
-        print(response.data)  # 서버의 응답 내용 출력
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_not_existing_post_content_id(self):
