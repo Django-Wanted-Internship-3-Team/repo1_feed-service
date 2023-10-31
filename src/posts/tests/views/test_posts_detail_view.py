@@ -78,7 +78,5 @@ class PostDetailViewTest(APITestCase):
         post.refresh_from_db()
         updated_view_count = post.view_count
 
-        print("initial_view_count", initial_view_count)
-
         self.assertEqual(updated_view_count, initial_view_count + 1)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
