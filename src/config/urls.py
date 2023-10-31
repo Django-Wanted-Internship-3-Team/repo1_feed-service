@@ -24,10 +24,14 @@ urlpatterns = [
     path("api/users/", include("users.urls")),
     path("api/posts/", include("posts.urls")),
     path("api/common/", include("common.urls")),
-    # Swagger
-    path("swagger/docs/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
-    # Likes
     path("api/likes/", include("likes.urls")),
+    path("api/shares/", include("shares.urls")),
+    # Swagger
+    path(
+        "swagger/docs/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

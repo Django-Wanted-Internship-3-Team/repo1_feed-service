@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDay, TruncHour
 from django.db.models.query import QuerySet
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
@@ -18,6 +19,7 @@ from posts.filters import PostFilter
 from posts.models import Post
 from posts.paginations import PaginationHandlerMixin
 from posts.serializers import (
+    PostDetailSerializer,
     PostListSerializer,
     PostQuerySerializer,
     StatisticsListSerializer,
@@ -210,3 +212,20 @@ class PostListView(PaginationHandlerMixin, APIView):
             return posts.order_by(ordering)
         else:
             raise InvalidParameterException(f"ordering 값 {ordering}를 잘못 선택하셨습니다.")
+
+
+class PostDetailView(APIView):
+    # @TODO: IsAuthenticated로 변경 @simseulnyang
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        operation_summary="content_id에 해당하는 게시글 상세 조회",
+        responses={
+            status.HTTP_200_OK: PostDetailSerializer,
+        },
+    )
+    def get(self, request: Request, content_id: str) -> Response:
+        post = get_object_or_404(Post, content_id=content_id)
+        serializer = PostDetailSerializer(post)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -1,3 +1,6 @@
+import random
+import string
+
 from django.utils import timezone
 from rest_framework.request import Request
 
@@ -55,3 +58,7 @@ def get_now() -> timezone:
 
 def get_before_week() -> timezone:
     return (timezone.now() - timezone.timedelta(days=7)).strftime("%Y-%m-%d")
+
+
+def get_random_string(length=6) -> string:
+    return "".join(random.choice(string.ascii_letters + string.digits) for i in range(length))

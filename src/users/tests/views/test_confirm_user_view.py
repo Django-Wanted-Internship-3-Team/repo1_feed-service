@@ -51,7 +51,7 @@ class SignupViewTest(APITestCase):
 
     def test_post_signup_fail_invalid_password(self):
         response = self.client.post(
-            path=reverse("signup"),
+            path=reverse("confirm"),
             data=json.dumps(
                 {
                     "username": "testusername1",
@@ -65,7 +65,7 @@ class SignupViewTest(APITestCase):
 
     def test_post_signup_fail_invalid_code(self):
         response = self.client.post(
-            path=reverse("signup"),
+            path=reverse("confirm"),
             data=json.dumps(
                 {
                     "username": "testusername1",
@@ -79,8 +79,9 @@ class SignupViewTest(APITestCase):
 
     def test_post_signup_fail_already_confirmed(self):
         self.user.is_confirmed = True
+        self.user.save()
         response = self.client.post(
-            path=reverse("signup"),
+            path=reverse("confirm"),
             data=json.dumps(
                 {
                     "username": "testusername1",

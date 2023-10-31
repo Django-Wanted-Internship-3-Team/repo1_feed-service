@@ -74,3 +74,23 @@ class PostQuerySerializer(serializers.Serializer):
         help_text="created_at, updated_at, view_count, like_count, share_count를 기준으로 오름차순/내림차순으로 정렬하여 조회합니다. (default: created_at)",
     )
     hashtag = serializers.CharField(required=False, help_text="조회할 해시태그입니다. (default: 본인계정)")
+
+
+class PostDetailSerializer(serializers.ModelSerializer):
+    hashtag = HashTagSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            "content_id",
+            "post_type",
+            "title",
+            "content",
+            "view_count",
+            "like_count",
+            "share_count",
+            "created_at",
+            "updated_at",
+            "hashtag",
+            "user",
+        ]
