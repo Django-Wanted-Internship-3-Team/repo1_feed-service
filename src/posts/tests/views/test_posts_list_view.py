@@ -59,7 +59,7 @@ class PostListViewTest(APITestCase):
             path=reverse("list"),
             data={"type": "all", "hashtag": self.hashtag1.id, "ordering": "created_at", "search": ""},
         )
-        print(response.data)  # 서버의 응답 내용 출력
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 4)  # 예상되는 게시물 개수 확인
         for item in response.data:
