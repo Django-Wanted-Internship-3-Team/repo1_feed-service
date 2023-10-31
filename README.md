@@ -185,6 +185,6 @@ docker compose run django poetry run python3 src/manage.py test src/
 | 윤성원 | 팀장 | [@lfoyh6591](https://github.com/lfoyh6591) | lfoyh6591@naver.com | https://determined-chamomile-42b.notion.site/835d8c6783a2477499438c07e1a7c125?pvs=4
 | 사재혁 | 팀원 | [@saJaeHyukc](https://github.com/saJaeHyukc) | wogur981208@gmail.com | https://determined-chamomile-42b.notion.site/f86b007c44954ab6947dbf2a445ee67f?pvs=4
 | 박대준 | 팀원 | [@Chestnut90](https://github.com/Chestnut90) | cowzon90@gmail.com | https://determined-chamomile-42b.notion.site/09b567f9f59747ee86d4074659211a3a?pvs=4
-| 이슬기 | 팀원 | [@simseulnyang](https://github.com/simseulnyang) | https://determined-chamomile-42b.notion.site/5491797e84834a26a32a0f8ce58e51d8?pvs=4
+| 이슬기 | 팀원 | [@simseulnyang](https://github.com/simseulnyang) | happysseul627@gmail.com | https://determined-chamomile-42b.notion.site/5491797e84834a26a32a0f8ce58e51d8?pvs=4
 
 </div>
