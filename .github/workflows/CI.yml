@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ "develop", "main" ]
+
+jobs:
+  django-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build docker
+        run: docker compose build
+
+      - name: Migration test database
+        run: docker compose run django poetry run python src/manage.py migrate
+
+      - name: Run isort
+        run: docker compose run django poetry run isort . --check
+
+      - name: Run black
+        run: docker compose run django poetry run black . --check
+
+      - name: Run flake8
+        run: docker compose run django poetry run flake8
+
+      - name: Run Test
+        run: docker compose run django poetry run python3 src/manage.py test

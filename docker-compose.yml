@@ -1,0 +1,36 @@
+version: '3.9'
+
+volumes:
+  postgres: {}
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres:16.0-alpine
+    volumes:
+      - postgres:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=repo_1
+      - TZ=Asia/Seoul
+    restart: on-failure
+
+  django:
+    container_name: django
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      bash -c  "poetry run python src/manage.py makemigrations &&
+       poetry run python src/manage.py migrate &&
+       poetry run python src/manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./src:/app/src/
+    environment:
+      - POSTGRESQL_HOST=postgres
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    restart: on-failure
